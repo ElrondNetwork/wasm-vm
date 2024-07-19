@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/multiversx/mx-chain-core-go/core"
 	"github.com/multiversx/mx-chain-core-go/core/check"
 	logger "github.com/multiversx/mx-chain-logger-go"
 	scenexec "github.com/multiversx/mx-chain-scenario-go/scenario/executor"
@@ -18,6 +19,7 @@ import (
 	executorwrapper "github.com/multiversx/mx-chain-vm-go/executor/wrapper"
 	vmscenario "github.com/multiversx/mx-chain-vm-go/scenario"
 	"github.com/multiversx/mx-chain-vm-go/testcommon/testexecutor"
+	"github.com/multiversx/mx-chain-vm-go/vmhost"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,12 +52,16 @@ type ScenariosTestBuilder struct {
 // ScenariosTest will create a new ScenariosTestBuilder instance
 func ScenariosTest(t *testing.T) *ScenariosTestBuilder {
 	return &ScenariosTestBuilder{
-		t:                   t,
-		folder:              "",
-		singleFile:          "",
-		executorLogger:      nil,
-		executorFactory:     nil,
-		enableEpochsHandler: worldmock.EnableEpochsHandlerStubAllFlags(),
+		t:               t,
+		folder:          "",
+		singleFile:      "",
+		executorLogger:  nil,
+		executorFactory: nil,
+		enableEpochsHandler: &worldmock.EnableEpochsHandlerStub{
+			IsFlagEnabledCalled: func(flag core.EnableEpochFlag) bool {
+				return flag != vmhost.ValidationOnGobDecodeFlag // relevant for big float tests. TODO: remove this when completely migrate to go1.22
+			},
+		},
 	}
 }
 

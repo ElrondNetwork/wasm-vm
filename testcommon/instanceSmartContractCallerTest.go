@@ -123,6 +123,12 @@ func (template *InstanceCallTestTemplate) WithWasmerSIGSEGVPassthrough(passthrou
 	return template
 }
 
+// WithEnableEpochsHandler provides the enable epochs handler to be used by the mock contract call test
+func (template *InstanceCallTestTemplate) WithEnableEpochsHandler(handler vmhost.EnableEpochsHandler) *InstanceCallTestTemplate {
+	template.hostBuilder.WithEnableEpochsHandler(handler)
+	return template
+}
+
 // GetVMHost returns the inner VMHost
 func (template *InstanceCallTestTemplate) GetVMHost() vmhost.VMHost {
 	return template.host

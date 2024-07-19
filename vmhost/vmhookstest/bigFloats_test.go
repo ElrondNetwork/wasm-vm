@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/multiversx/mx-chain-core-go/core"
+	"github.com/multiversx/mx-chain-scenario-go/worldmock"
 	contextmock "github.com/multiversx/mx-chain-vm-go/mock/context"
 	test "github.com/multiversx/mx-chain-vm-go/testcommon"
 	"github.com/multiversx/mx-chain-vm-go/vmhost"
@@ -113,21 +115,47 @@ func TestBigFloats_Add(t *testing.T) {
 func TestBigFloats_Panic_FailExecution_Add(t *testing.T) {
 	floatArgument1 := []byte{1, 10, 0, 0, 0, 53, 0, 0, 0, 58, 0, 31, 28, 26, 150, 254, 14, 45}
 	floatArgument2 := []byte{1, 11, 0, 0, 0, 53, 0, 0, 0, 52, 222, 212, 49, 108, 64, 122, 107, 100}
-	test.BuildInstanceCallTest(t).
-		WithContracts(
-			test.CreateInstanceContract(test.ParentAddress).
-				WithCode(test.GetTestSCCode("big-floats", "../../"))).
-		WithInput(test.CreateTestContractCallInputBuilder().
-			WithGasProvided(100000).
-			WithFunction("BigFloatAddTest").
-			WithArguments([]byte{0, 0, 0, byte(10)},
-				floatArgument1, floatArgument2).
-			Build()).
-		AndAssertResults(func(host vmhost.VMHost, stubBlockchainHook *contextmock.BlockchainHookStub, verify *test.VMOutputVerifier) {
-			verify.
-				ReturnCode(10).
-				ReturnMessage("this big Float operation is not permitted while doing float.Add")
-		})
+
+	t.Run("before ValidationOnGobDecodeFlag", func(t *testing.T) {
+		test.BuildInstanceCallTest(t).
+			WithContracts(
+				test.CreateInstanceContract(test.ParentAddress).
+					WithCode(test.GetTestSCCode("big-floats", "../../"))).
+			WithInput(test.CreateTestContractCallInputBuilder().
+				WithGasProvided(100000).
+				WithFunction("BigFloatAddTest").
+				WithArguments([]byte{0, 0, 0, byte(10)},
+					floatArgument1, floatArgument2).
+				Build()).
+			WithEnableEpochsHandler(&worldmock.EnableEpochsHandlerStub{
+				IsFlagEnabledCalled: func(flag core.EnableEpochFlag) bool {
+					return flag == vmhost.CryptoOpcodesV2Flag
+				},
+			}).
+			AndAssertResults(func(host vmhost.VMHost, stubBlockchainHook *contextmock.BlockchainHookStub, verify *test.VMOutputVerifier) {
+				verify.
+					ReturnCode(10).
+					ReturnMessage("this big Float operation is not permitted while doing float.Add")
+			})
+	})
+	t.Run("after ValidationOnGobDecodeFlag", func(t *testing.T) {
+		test.BuildInstanceCallTest(t).
+			WithContracts(
+				test.CreateInstanceContract(test.ParentAddress).
+					WithCode(test.GetTestSCCode("big-floats", "../../"))).
+			WithInput(test.CreateTestContractCallInputBuilder().
+				WithGasProvided(100000).
+				WithFunction("BigFloatAddTest").
+				WithArguments([]byte{0, 0, 0, byte(10)},
+					floatArgument1, floatArgument2).
+				Build()).
+			WithEnableEpochsHandler(worldmock.EnableEpochsHandlerStubAllFlags()).
+			AndAssertResults(func(host vmhost.VMHost, stubBlockchainHook *contextmock.BlockchainHookStub, verify *test.VMOutputVerifier) {
+				verify.
+					ReturnCode(10).
+					ReturnMessage("Float.GobDecode: msb not set in last word 0x1f1c1a96fe0e2d of 0x.1f1c1a96fe0e2dp+58")
+			})
+	})
 }
 
 func TestBigFloats_Sub(t *testing.T) {
@@ -160,21 +188,47 @@ func TestBigFloats_Sub(t *testing.T) {
 func TestBigFloats_Panic_FailExecution_Sub(t *testing.T) {
 	floatArgument1 := []byte{1, 10, 0, 0, 0, 53, 0, 0, 0, 58, 0, 31, 28, 26, 150, 254, 14, 45}
 	floatArgument2 := []byte{1, 10, 0, 0, 0, 53, 0, 0, 0, 52, 222, 212, 49, 108, 64, 122, 107, 100}
-	test.BuildInstanceCallTest(t).
-		WithContracts(
-			test.CreateInstanceContract(test.ParentAddress).
-				WithCode(test.GetTestSCCode("big-floats", "../../"))).
-		WithInput(test.CreateTestContractCallInputBuilder().
-			WithGasProvided(100000).
-			WithFunction("BigFloatSubTest").
-			WithArguments([]byte{0, 0, 0, byte(10)},
-				floatArgument1, floatArgument2).
-			Build()).
-		AndAssertResults(func(host vmhost.VMHost, stubBlockchainHook *contextmock.BlockchainHookStub, verify *test.VMOutputVerifier) {
-			verify.
-				ReturnCode(10).
-				ReturnMessage("this big Float operation is not permitted while doing float.Sub")
-		})
+
+	t.Run("before ValidationOnGobDecodeFlag", func(t *testing.T) {
+		test.BuildInstanceCallTest(t).
+			WithContracts(
+				test.CreateInstanceContract(test.ParentAddress).
+					WithCode(test.GetTestSCCode("big-floats", "../../"))).
+			WithInput(test.CreateTestContractCallInputBuilder().
+				WithGasProvided(100000).
+				WithFunction("BigFloatSubTest").
+				WithArguments([]byte{0, 0, 0, byte(10)},
+					floatArgument1, floatArgument2).
+				Build()).
+			WithEnableEpochsHandler(&worldmock.EnableEpochsHandlerStub{
+				IsFlagEnabledCalled: func(flag core.EnableEpochFlag) bool {
+					return flag == vmhost.CryptoOpcodesV2Flag
+				},
+			}).
+			AndAssertResults(func(host vmhost.VMHost, stubBlockchainHook *contextmock.BlockchainHookStub, verify *test.VMOutputVerifier) {
+				verify.
+					ReturnCode(10).
+					ReturnMessage("this big Float operation is not permitted while doing float.Sub")
+			})
+	})
+	t.Run("after ValidationOnGobDecodeFlag", func(t *testing.T) {
+		test.BuildInstanceCallTest(t).
+			WithContracts(
+				test.CreateInstanceContract(test.ParentAddress).
+					WithCode(test.GetTestSCCode("big-floats", "../../"))).
+			WithInput(test.CreateTestContractCallInputBuilder().
+				WithGasProvided(100000).
+				WithFunction("BigFloatSubTest").
+				WithArguments([]byte{0, 0, 0, byte(10)},
+					floatArgument1, floatArgument2).
+				Build()).
+			WithEnableEpochsHandler(worldmock.EnableEpochsHandlerStubAllFlags()).
+			AndAssertResults(func(host vmhost.VMHost, stubBlockchainHook *contextmock.BlockchainHookStub, verify *test.VMOutputVerifier) {
+				verify.
+					ReturnCode(10).
+					ReturnMessage("Float.GobDecode: msb not set in last word 0x1f1c1a96fe0e2d of 0x.1f1c1a96fe0e2dp+58")
+			})
+	})
 }
 
 func TestBigFloats_Success_Mul(t *testing.T) {

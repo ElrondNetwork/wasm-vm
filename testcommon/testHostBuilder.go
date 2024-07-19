@@ -112,6 +112,12 @@ func (thb *TestHostBuilder) WithGasSchedule(gasSchedule config.GasScheduleMap) *
 	return thb
 }
 
+// WithEnableEpochsHandler sets an enable epochs handler for the VM to work with.
+func (thb *TestHostBuilder) WithEnableEpochsHandler(handler vmcommon.EnableEpochsHandler) *TestHostBuilder {
+	thb.vmHostParameters.EnableEpochsHandler = handler
+	return thb
+}
+
 // Build initializes the VM host with all configured options.
 func (thb *TestHostBuilder) Build() vmhost.VMHost {
 	thb.initializeHost()

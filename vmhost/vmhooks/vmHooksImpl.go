@@ -92,6 +92,11 @@ func (context *VMHooksImpl) GetStorageContext() vmhost.StorageContext {
 	return context.host.Storage()
 }
 
+// GetEnableEpochsHandler returns the enable epochs handler
+func (context *VMHooksImpl) GetEnableEpochsHandler() vmhost.EnableEpochsHandler {
+	return context.host.EnableEpochsHandler()
+}
+
 // WithFault handles an error, taking into account whether it should completely
 // fail the execution of a contract or not.
 func (context *VMHooksImpl) WithFault(err error, failExecution bool) bool {

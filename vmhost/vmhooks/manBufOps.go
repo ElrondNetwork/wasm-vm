@@ -3,6 +3,7 @@ package vmhooks
 import (
 	"bytes"
 	"math/big"
+	"strings"
 
 	"github.com/multiversx/mx-chain-vm-go/executor"
 	"github.com/multiversx/mx-chain-vm-go/math"
@@ -461,6 +462,16 @@ func (context *VMHooksImpl) MBufferToBigFloat(mBufferHandle, bigFloatHandle int3
 
 	bigFloat := new(big.Float)
 	err = bigFloat.GobDecode(managedBuffer)
+	// TODO: remove 466-L473 when completely migrate to go1.22
+	enableEpochsHandler := context.GetEnableEpochsHandler()
+	hasSpecificError := isGobDecodeValidationError(err)
+	isFlagEnabled := enableEpochsHandler.IsFlagEnabled(vmhost.ValidationOnGobDecodeFlag)
+	hasSpecificErrorBeforeFlag := hasSpecificError && !isFlagEnabled
+	if hasSpecificErrorBeforeFlag {
+		value.Set(bigFloat)
+		return 0
+	}
+
 	if context.WithFault(err, runtime.ManagedBufferAPIErrorShouldFailExecution()) {
 		return 1
 	}
@@ -471,6 +482,26 @@ func (context *VMHooksImpl) MBufferToBigFloat(mBufferHandle, bigFloatHandle int3
 
 	value.Set(bigFloat)
 	return 0
+}
+
+func isGobDecodeValidationError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	validationErrors := []string{
+		"nonzero finite number with empty mantissa",
+		"msb not set in last word",
+		"zero precision finite number",
+	}
+
+	for _, validationError := range validationErrors {
+		if strings.Contains(err.Error(), validationError) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // MBufferFromBigFloat VMHooks implementation.
