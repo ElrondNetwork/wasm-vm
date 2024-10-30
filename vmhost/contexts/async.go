@@ -183,7 +183,7 @@ func (context *asyncContext) PushState() {
 		callbackData:       context.callbackData,
 		gasAccumulated:     context.gasAccumulated,
 		returnData:         context.returnData,
-		asyncCallGroups:    context.asyncCallGroups, // TODO matei-p use cloneCallGroups()?
+		asyncCallGroups:    context.cloneCallGroups(),
 
 		callType:                     context.callType,
 		callbackAsyncInitiatorCallID: context.callbackAsyncInitiatorCallID,
@@ -864,7 +864,7 @@ func (context *asyncContext) callCallback(callID []byte, vmOutput *vmcommon.VMOu
 	}
 
 	context.host.Metering().DisableRestoreGas()
-	isComplete, callbackVMOutput := loadedContext.ExecuteSyncCallbackAndFinishOutput(asyncCall, vmOutput, nil, gasAccumulated, err)
+	isComplete, callbackVMOutput := loadedContext.ExecuteLocalCallbackAndFinishOutput(asyncCall, vmOutput, nil, gasAccumulated, err)
 	context.host.Metering().EnableRestoreGas()
 	return isComplete, callbackVMOutput, nil
 }

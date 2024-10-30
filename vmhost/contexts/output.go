@@ -567,13 +567,46 @@ func (context *outputContext) DeployCode(input vmhost.CodeDeployInput) {
 	context.codeUpdates[string(input.ContractAddress)] = empty
 }
 
+// createVMOutputInCaseOfErrorOfAsyncCallback appends the deletion of the async context to the output
+func (context *outputContext) createVMOutputInCaseOfErrorOfAsyncCallback(returnCode vmcommon.ReturnCode, returnMessage string) *vmcommon.VMOutput {
+	async := context.host.Async()
+	metering := context.host.Metering()
+
+	callId := async.GetCallbackAsyncInitiatorCallID()
+
+	context.outputState = &vmcommon.VMOutput{
+		GasRemaining:   0,
+		GasRefund:      big.NewInt(0),
+		ReturnCode:     returnCode,
+		ReturnMessage:  returnMessage,
+		OutputAccounts: make(map[string]*vmcommon.OutputAccount),
+	}
+
+	err := async.DeleteFromCallID(callId)
+	if err != nil {
+		logOutput.Trace("failed to delete Async Context", "callId", callId, "err", err)
+	}
+
+	metering.UpdateGasStateOnFailure(context.outputState)
+
+	return context.outputState
+}
+
 // CreateVMOutputInCaseOfError creates a new vmOutput with the given error set as return message.
 func (context *outputContext) CreateVMOutputInCaseOfError(err error) *vmcommon.VMOutput {
 	runtime := context.host.Runtime()
+	metering := context.host.Metering()
+
+	callType := runtime.GetVMInput().CallType
+
 	runtime.AddError(err, runtime.FunctionName())
 
 	returnCode := context.resolveReturnCodeFromError(err)
 	returnMessage := context.resolveReturnMessageFromError(err)
+
+	if context.host.EnableEpochsHandler().IsFlagEnabled(vmhost.AsyncV3Flag) && callType == vm.AsynchronousCallBack {
+		return context.createVMOutputInCaseOfErrorOfAsyncCallback(returnCode, returnMessage)
+	}
 
 	vmOutput := &vmcommon.VMOutput{
 		GasRemaining:  0,
@@ -582,7 +615,7 @@ func (context *outputContext) CreateVMOutputInCaseOfError(err error) *vmcommon.V
 		ReturnMessage: returnMessage,
 	}
 
-	context.host.Metering().UpdateGasStateOnFailure(vmOutput)
+	metering.UpdateGasStateOnFailure(vmOutput)
 
 	return vmOutput
 }

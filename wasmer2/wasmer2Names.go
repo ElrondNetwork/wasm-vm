@@ -30,6 +30,7 @@ var functionNames = map[string]struct{}{
 	"transferESDTNFTExecute":                   empty,
 	"multiTransferESDTNFTExecute":              empty,
 	"createAsyncCall":                          empty,
+	"createAsyncV3Call": 					    empty,
 	"setAsyncContextCallback":                  empty,
 	"upgradeContract":                          empty,
 	"upgradeFromSourceContract":                empty,

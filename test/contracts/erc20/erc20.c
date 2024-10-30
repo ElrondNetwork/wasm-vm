@@ -44,7 +44,6 @@ void computeAllowanceKey(byte *destination, byte *from, byte* to) {
   // Note: in smart contract addresses, the first 10 bytes are all 0
   // therefore we read from byte 10 onwards to provide more significant bytes
   // and to minimize the chance for collisions
-  // TODO: switching to a hash instead of a concatenation of addresses might make it safer
   for (int i = 0; i < 15; i++) {
     destination[1+i] = from[10+i];
   }

@@ -412,8 +412,6 @@ func (host *vmHost) handleBuiltinFunctionCall(input *vmcommon.ContractCallInput)
 	}
 
 	err = contexts.AddAsyncArgumentsToOutputTransfers(
-		host.Output(),
-		input.RecipientAddr,
 		input.AsyncArguments,
 		vm.AsynchronousCall,
 		builtinOutput)
@@ -1142,6 +1140,14 @@ func (host *vmHost) checkFinalGasAfterExit() error {
 	return nil
 }
 
+func (host *vmHost) checkValidFunctionName(name string) error {
+	if name == "" {
+		return executor.ErrInvalidFunction
+	}
+
+	return nil
+}
+
 func (host *vmHost) callInitFunction() error {
 	return host.callSCFunction(vmhost.InitFunctionName)
 }
@@ -1151,12 +1157,18 @@ func (host *vmHost) callUpgradeFunction() error {
 }
 
 func (host *vmHost) callSCFunction(functionName string) error {
+	err := host.checkValidFunctionName(functionName)
+	if err != nil {
+		log.Trace("call SC method failed", "error", err, "src", "checkValidFunctionName")
+		return err
+	}
+
 	runtime := host.Runtime()
 	if !runtime.HasFunction(functionName) {
 		return executor.ErrFuncNotFound
 	}
 
-	err := runtime.CallSCFunction(functionName)
+	err = runtime.CallSCFunction(functionName)
 	if err != nil {
 		err = host.handleBreakpointIfAny(err)
 	}
@@ -1221,6 +1233,10 @@ func (host *vmHost) callSCMethodAsynchronousCallBack() error {
 		return nil
 	}
 
+	if asyncCall.HasPendingCallback {
+		return nil
+	}
+
 	async.SetCallbackParentCall(asyncCall)
 
 	if asyncCall.HasCallback() {
@@ -1233,12 +1249,6 @@ func (host *vmHost) callSCMethodAsynchronousCallBack() error {
 			_ = metering.UseGasBounded(metering.GasLeft())
 		}
 
-		// TODO matei-p R2 Returning an error here will cause the VMOutput to be
-		// empty (due to CreateVMOutputInCaseOfError()). But in release 2 of
-		// Promises, CreateVMOutputInCaseOfError() should still contain storage
-		// deletions caused by AsyncContext cleanup, even if callbackErr != nil and
-		// was returned here. The storage deletions MUST be persisted in the data
-		// trie once R2 goes live.
 		if !isCallComplete {
 			return callbackErr
 		}
@@ -1260,47 +1270,47 @@ func (host *vmHost) callFunctionAndExecuteAsync() (bool, error) {
 	runtime := host.Runtime()
 	async := host.Async()
 
-	// TODO refactor this, and apply this condition in other places where a
-	// function is called
-	if runtime.FunctionName() != "" {
-		err := host.verifyAllowedFunctionCall()
-		if err != nil {
-			log.Trace("call SC method failed", "error", err, "src", "verifyAllowedFunctionCall")
-			return false, err
-		}
+	err := host.checkValidFunctionName(runtime.FunctionName())
+	if err != nil {
+		log.Trace("call SC method failed", "error", err, "src", "checkValidFunctionName")
+		return false, err
+	}
 
-		functionName, err := runtime.FunctionNameChecked()
-		if err != nil {
-			log.Trace("call SC method failed", "error", err, "src", "FunctionNameChecked")
-			return false, err
-		}
+	err = host.verifyAllowedFunctionCall()
+	if err != nil {
+		log.Trace("call SC method failed", "error", err, "src", "verifyAllowedFunctionCall")
+		return false, err
+	}
 
-		err = runtime.CallSCFunction(functionName)
-		if err != nil {
-			err = host.handleBreakpointIfAny(err)
-			log.Trace("breakpoint detected and handled", "err", err)
-		}
-		if err == nil {
-			err = host.checkFinalGasAfterExit()
-		}
-		if err != nil {
-			log.Trace("call SC method failed", "error", err, "src", "sc function")
-			return true, err
-		}
+	functionName, err := runtime.FunctionNameChecked()
+	if err != nil {
+		log.Trace("call SC method failed", "error", err, "src", "FunctionNameChecked")
+		return false, err
+	}
 
-		err = async.Execute()
-		if err != nil {
-			log.Trace("call SC method failed", "error", err, "src", "async execution")
-			return false, err
-		}
+	err = runtime.CallSCFunction(functionName)
+	if err != nil {
+		err = host.handleBreakpointIfAny(err)
+		log.Trace("breakpoint detected and handled", "err", err)
+	}
+	if err == nil {
+		err = host.checkFinalGasAfterExit()
+	}
+	if err != nil {
+		log.Trace("call SC method failed", "error", err, "src", "sc function")
+		return true, err
+	}
 
-		if !async.IsComplete() || async.HasLegacyGroup() {
-			async.SetResults(host.Output().GetVMOutput())
-			err = async.Save()
-			return false, err
-		}
-	} else {
-		return false, executor.ErrInvalidFunction
+	err = async.Execute()
+	if err != nil {
+		log.Trace("call SC method failed", "error", err, "src", "async execution")
+		return false, err
+	}
+
+	if !async.IsComplete() || async.HasLegacyGroup() {
+		async.SetResults(host.Output().GetVMOutput())
+		err = async.Save()
+		return false, err
 	}
 
 	return true, nil

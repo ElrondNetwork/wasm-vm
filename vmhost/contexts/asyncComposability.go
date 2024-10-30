@@ -63,31 +63,34 @@ func (context *asyncContext) complete() error {
 		return nil
 	}
 
+	gasToAccumulate := context.gasAccumulated
+	notifyChildComplete := true
 	currentCallID := context.GetCallID()
-	if context.callType == vm.AsynchronousCall {
+	switch context.callType {
+	case vm.AsynchronousCall:
 		vmOutput := context.childResults
-		isCallbackComplete, _, err := context.callCallback(currentCallID, vmOutput, nil)
+		notifyChildComplete, _, err = context.callCallback(currentCallID, vmOutput, nil)
 		if err != nil {
 			return err
 		}
-		if isCallbackComplete {
-			return context.NotifyChildIsComplete(currentCallID, 0)
-		}
-	} else if context.callType == vm.AsynchronousCallBack {
+		gasToAccumulate = 0
+	case vm.AsynchronousCallBack:
 		err = context.LoadParentContext()
 		if err != nil {
 			return err
 		}
 
-		currentCallID := context.GetCallerCallID()
-		return context.NotifyChildIsComplete(currentCallID, context.gasAccumulated)
-	} else if context.callType == vm.DirectCall {
+		currentCallID = context.GetCallerCallID()
+	case vm.DirectCall:
 		err = context.LoadParentContext()
 		if err != nil {
 			return err
 		}
+		currentCallID = nil
+	}
 
-		return context.NotifyChildIsComplete(nil, context.gasAccumulated)
+	if notifyChildComplete {
+		return context.NotifyChildIsComplete(currentCallID, gasToAccumulate)
 	}
 
 	return nil

@@ -1,6 +1,5 @@
 package gasschedules
 
-// TODO: go:embed can be used after we upgrade to go 1.16
 // import _ "embed"
 
 // //go:embed gasScheduleV1.toml

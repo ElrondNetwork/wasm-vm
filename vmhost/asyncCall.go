@@ -23,21 +23,28 @@ type AsyncCall struct {
 	CallbackClosure []byte
 
 	IsBuiltinFunctionCall bool
+	IsAsyncV3             bool
+
+	HasPendingCallback     bool
+	PendingCallbackGasLocked uint64
 }
 
 // Clone creates a deep clone of the AsyncCall
 func (ac *AsyncCall) Clone() *AsyncCall {
 	clone := &AsyncCall{
-		CallID:          ac.CallID,
-		Status:          ac.Status,
-		ExecutionMode:   ac.ExecutionMode,
-		Destination:     make([]byte, len(ac.Destination)),
-		Data:            make([]byte, len(ac.Data)),
-		GasLimit:        ac.GasLimit,
-		GasLocked:       ac.GasLocked,
-		ValueBytes:      make([]byte, len(ac.ValueBytes)),
-		SuccessCallback: ac.SuccessCallback,
-		ErrorCallback:   ac.ErrorCallback,
+		CallID:            ac.CallID,
+		Status:            ac.Status,
+		ExecutionMode:     ac.ExecutionMode,
+		Destination:       make([]byte, len(ac.Destination)),
+		Data:              make([]byte, len(ac.Data)),
+		GasLimit:          ac.GasLimit,
+		GasLocked:         ac.GasLocked,
+		ValueBytes:        make([]byte, len(ac.ValueBytes)),
+		SuccessCallback:   ac.SuccessCallback,
+		ErrorCallback:     ac.ErrorCallback,
+		IsAsyncV3:         ac.IsAsyncV3,
+		HasPendingCallback: ac.HasPendingCallback,
+		PendingCallbackGasLocked: ac.PendingCallbackGasLocked,
 	}
 
 	copy(clone.Destination, ac.Destination)
@@ -105,6 +112,12 @@ func (ac *AsyncCall) HasDefinedAnyCallback() bool {
 	return len(ac.SuccessCallback) > 0 || len(ac.ErrorCallback) > 0
 }
 
+// MarkSkippedCallback this async call has skipped calling its callback
+func (ac *AsyncCall) MarkSkippedCallback(pendingGasLock uint64) {
+	ac.HasPendingCallback = true
+	ac.PendingCallbackGasLocked = pendingGasLock
+}
+
 // UpdateStatus sets the status of the async call depending on the provided ReturnCode
 func (ac *AsyncCall) UpdateStatus(returnCode vmcommon.ReturnCode) {
 	ac.Status = AsyncCallResolved
@@ -135,17 +148,20 @@ func (ac *AsyncCall) IsInterfaceNil() bool {
 
 func (ac *AsyncCall) toSerializable() *SerializableAsyncCall {
 	return &SerializableAsyncCall{
-		CallID:          ac.CallID,
-		Status:          SerializableAsyncCallStatus(ac.Status),
-		ExecutionMode:   SerializableAsyncCallExecutionMode(ac.ExecutionMode),
-		Destination:     ac.Destination,
-		Data:            ac.Data,
-		GasLimit:        ac.GasLimit,
-		GasLocked:       ac.GasLocked,
-		ValueBytes:      ac.ValueBytes,
-		SuccessCallback: ac.SuccessCallback,
-		ErrorCallback:   ac.ErrorCallback,
-		CallbackClosure: ac.CallbackClosure,
+		CallID:            ac.CallID,
+		Status:            SerializableAsyncCallStatus(ac.Status),
+		ExecutionMode:     SerializableAsyncCallExecutionMode(ac.ExecutionMode),
+		Destination:       ac.Destination,
+		Data:              ac.Data,
+		GasLimit:          ac.GasLimit,
+		GasLocked:         ac.GasLocked,
+		ValueBytes:        ac.ValueBytes,
+		SuccessCallback:   ac.SuccessCallback,
+		ErrorCallback:     ac.ErrorCallback,
+		CallbackClosure:   ac.CallbackClosure,
+		IsAsyncV3:         ac.IsAsyncV3,
+		HasPendingCallback: ac.HasPendingCallback,
+		PendingCallbackGasLocked: ac.PendingCallbackGasLocked,
 	}
 }
 
@@ -159,16 +175,19 @@ func fromSerializableAsyncCalls(serializableAsyncCalls []*SerializableAsyncCall)
 
 func (serAsyncCall *SerializableAsyncCall) fromSerializable() *AsyncCall {
 	return &AsyncCall{
-		CallID:          serAsyncCall.CallID,
-		Status:          AsyncCallStatus(serAsyncCall.Status),
-		ExecutionMode:   AsyncCallExecutionMode(serAsyncCall.ExecutionMode),
-		Destination:     serAsyncCall.Destination,
-		Data:            serAsyncCall.Data,
-		GasLimit:        serAsyncCall.GasLimit,
-		GasLocked:       serAsyncCall.GasLocked,
-		ValueBytes:      serAsyncCall.ValueBytes,
-		SuccessCallback: serAsyncCall.SuccessCallback,
-		ErrorCallback:   serAsyncCall.ErrorCallback,
-		CallbackClosure: serAsyncCall.CallbackClosure,
+		CallID:            serAsyncCall.CallID,
+		Status:            AsyncCallStatus(serAsyncCall.Status),
+		ExecutionMode:     AsyncCallExecutionMode(serAsyncCall.ExecutionMode),
+		Destination:       serAsyncCall.Destination,
+		Data:              serAsyncCall.Data,
+		GasLimit:          serAsyncCall.GasLimit,
+		GasLocked:         serAsyncCall.GasLocked,
+		ValueBytes:        serAsyncCall.ValueBytes,
+		SuccessCallback:   serAsyncCall.SuccessCallback,
+		ErrorCallback:     serAsyncCall.ErrorCallback,
+		CallbackClosure:   serAsyncCall.CallbackClosure,
+		IsAsyncV3:         serAsyncCall.IsAsyncV3,
+		HasPendingCallback: serAsyncCall.HasPendingCallback,
+		PendingCallbackGasLocked: serAsyncCall.PendingCallbackGasLocked,
 	}
 }

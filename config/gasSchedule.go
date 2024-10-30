@@ -301,6 +301,7 @@ func FillGasMapBaseOpsAPICosts(value, asyncCallbackGasLock uint64) map[string]ui
 	gasMap["AsyncCallStep"] = value
 	gasMap["AsyncCallbackGasLock"] = asyncCallbackGasLock
 	gasMap["CreateAsyncCall"] = value
+	gasMap["CreateAsyncV3Call"] = value
 	gasMap["SetAsyncCallback"] = value
 	gasMap["SetAsyncGroupCallback"] = value
 	gasMap["SetAsyncContextCallback"] = value

@@ -70,6 +70,7 @@ type BaseOpsAPICost struct {
 	AsyncCallStep           uint64
 	AsyncCallbackGasLock    uint64
 	CreateAsyncCall         uint64
+	CreateAsyncV3Call       uint64
 	SetAsyncCallback        uint64
 	SetAsyncGroupCallback   uint64
 	SetAsyncContextCallback uint64

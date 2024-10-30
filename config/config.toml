@@ -45,6 +45,7 @@
     AsyncCallStep = 10
     AsyncCallbackGasLock = 10
     CreateAsyncCall = 10
+    CreateAsyncV3Call = 10
     SetAsyncCallback = 10
     SetAsyncGroupCallback = 10
     SetAsyncContextCallback = 10

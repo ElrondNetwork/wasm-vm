@@ -8,6 +8,9 @@ clean:
 build:
 	go build ./...
 
+gen-async:
+	 protoc -I=./vmhost -I=${GOPATH}/src -I=${GOPATH}/src/github.com/multiversx/protobuf/protobuf -I=${GOPATH}/src/github.com/gogo/protobuf  --gogoslick_out=./vmhost ./vmhost/asyncCall.proto
+
 vmserver:
 ifndef VMSERVER_PATH
 	$(error VMSERVER_PATH is undefined)

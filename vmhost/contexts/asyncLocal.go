@@ -16,12 +16,24 @@ type lastTransferInfo struct {
 
 func (context *asyncContext) executeAsyncLocalCalls() error {
 	localCalls := make([]*vmhost.AsyncCall, 0)
+	hasAnyRemoteCallbacks := false
 
 	for _, group := range context.asyncCallGroups {
 		for _, call := range group.AsyncCalls {
 			if call.IsLocal() {
 				localCalls = append(localCalls, call)
 			}
+
+			if call.IsRemote() && call.HasCallback() {
+				hasAnyRemoteCallbacks = true
+			}
+		}
+	}
+
+	if hasAnyRemoteCallbacks {
+		currentCall := context.GetAsyncCallByCallID(context.GetCallID()).GetAsyncCall()
+		if currentCall != nil && currentCall.IsAsyncV3 {
+			currentCall.MarkSkippedCallback(currentCall.GetGasLocked())
 		}
 	}
 
@@ -35,7 +47,6 @@ func (context *asyncContext) executeAsyncLocalCalls() error {
 	return nil
 }
 
-// TODO split this method into smaller ones
 func (context *asyncContext) executeAsyncLocalCall(asyncCall *vmhost.AsyncCall) error {
 	destinationCallInput, err := context.createContractCallInput(asyncCall)
 	if err != nil {
@@ -79,44 +90,51 @@ func (context *asyncContext) executeAsyncLocalCall(asyncCall *vmhost.AsyncCall) 
 	asyncCall.UpdateStatus(vmOutput.ReturnCode)
 
 	if isComplete {
-		if asyncCall.HasCallback() {
-			// Restore gas locked while still on the caller instance; otherwise, the
-			// locked gas will appear to have been used twice by the caller instance.
-			isCallbackComplete, callbackVMOutput := context.ExecuteSyncCallbackAndFinishOutput(asyncCall, vmOutput, destinationCallInput, 0, err)
-			if callbackVMOutput == nil {
-				return vmhost.ErrAsyncNoOutputFromCallback
-			}
-
-			context.host.CompleteLogEntriesWithCallType(callbackVMOutput, vmhost.AsyncCallbackString)
-
-			if isCallbackComplete {
-				callbackGasRemaining := callbackVMOutput.GasRemaining
-				callbackVMOutput.GasRemaining = 0
-				return context.completeChild(asyncCall.CallID, callbackGasRemaining)
-			}
-		} else {
-			return context.completeChild(asyncCall.CallID, 0)
-		}
+		return context.executeAsyncCallbackAndComplete(asyncCall, vmOutput, destinationCallInput, err)
 	}
 
 	return nil
 }
 
-// ExecuteSyncCallbackAndFinishOutput executes the callback and finishes the output
-// TODO rename to executeLocalCallbackAndFinishOutput
-func (context *asyncContext) ExecuteSyncCallbackAndFinishOutput(
+func (context *asyncContext) executeAsyncCallbackAndComplete(
+	asyncCall *vmhost.AsyncCall,
+	destinationVMOutput *vmcommon.VMOutput,
+	destinationCallInput *vmcommon.ContractCallInput,
+	destinationErr error,
+) error {
+	callbackGasRemaining := uint64(0)
+	if asyncCall.HasCallback() {
+		// Restore gas locked while still on the caller instance; otherwise, the
+		// locked gas will appear to have been used twice by the caller instance.
+		isCallbackComplete, callbackVMOutput := context.ExecuteLocalCallbackAndFinishOutput(asyncCall, destinationVMOutput, destinationCallInput, 0, destinationErr)
+		if callbackVMOutput == nil {
+			return vmhost.ErrAsyncNoOutputFromCallback
+		}
+
+		context.host.CompleteLogEntriesWithCallType(callbackVMOutput, vmhost.AsyncCallbackString)
+
+		if isCallbackComplete {
+			callbackGasRemaining = callbackVMOutput.GasRemaining
+			callbackVMOutput.GasRemaining = 0
+		}
+	}
+
+	return context.completeChild(asyncCall.CallID, callbackGasRemaining)
+}
+
+// ExecuteLocalCallbackAndFinishOutput executes the callback and finishes the output
+func (context *asyncContext) ExecuteLocalCallbackAndFinishOutput(
 	asyncCall *vmhost.AsyncCall,
 	vmOutput *vmcommon.VMOutput,
 	_ *vmcommon.ContractCallInput,
 	gasAccumulated uint64,
 	err error) (bool, *vmcommon.VMOutput) {
-	callbackVMOutput, isComplete, _ := context.executeSyncCallback(asyncCall, vmOutput, gasAccumulated, err)
+	callbackVMOutput, isComplete, _ := context.executeLocalCallback(asyncCall, vmOutput, gasAccumulated, err)
 	context.finishAsyncLocalCallbackExecution()
 	return isComplete, callbackVMOutput
 }
 
-// TODO rename to executeLocalCallback
-func (context *asyncContext) executeSyncCallback(
+func (context *asyncContext) executeLocalCallback(
 	asyncCall *vmhost.AsyncCall,
 	destinationVMOutput *vmcommon.VMOutput,
 	gasAccumulated uint64,
@@ -124,11 +142,11 @@ func (context *asyncContext) executeSyncCallback(
 ) (*vmcommon.VMOutput, bool, error) {
 	callbackInput, err := context.createCallbackInput(asyncCall, destinationVMOutput, gasAccumulated, destinationErr)
 	if err != nil {
-		logAsync.Trace("executeSyncCallback", "error", err)
+		logAsync.Trace("executeLocalCallback", "error", err)
 		return nil, true, err
 	}
 
-	logAsync.Trace("executeSyncCallback",
+	logAsync.Trace("executeLocalCallback",
 		"caller", callbackInput.CallerAddr,
 		"dest", callbackInput.RecipientAddr,
 		"func", callbackInput.Function,
@@ -183,7 +201,7 @@ func (context *asyncContext) executeSyncHalfOfBuiltinFunction(asyncCall *vmhost.
 	if vmOutput.ReturnCode != vmcommon.Ok {
 		asyncCall.Reject()
 		if asyncCall.HasCallback() {
-			_, _, _ = context.executeSyncCallback(asyncCall, vmOutput, 0, err)
+			_, _, _ = context.executeLocalCallback(asyncCall, vmOutput, 0, err)
 			context.finishAsyncLocalCallbackExecution()
 		}
 	}
@@ -240,7 +258,6 @@ func (context *asyncContext) createContractCallInput(asyncCall *vmhost.AsyncCall
 	return contractCallInput, nil
 }
 
-// TODO function too large; refactor needed
 func (context *asyncContext) createCallbackInput(
 	asyncCall *vmhost.AsyncCall,
 	vmOutput *vmcommon.VMOutput,
@@ -255,14 +272,12 @@ func (context *asyncContext) createCallbackInput(
 	}
 
 	arguments := context.getArgumentsForCallback(vmOutput, destinationErr)
-
 	returnWithError := false
 	if destinationErr != nil || vmOutput.ReturnCode != vmcommon.Ok {
 		returnWithError = true
 	}
 
 	callbackFunction := asyncCall.GetCallbackName()
-
 	dataLength := computeDataLengthFromArguments(callbackFunction, arguments)
 	gasLimit, err := context.computeGasLimitForCallback(asyncCall, vmOutput, dataLength)
 	if err != nil {
@@ -270,9 +285,8 @@ func (context *asyncContext) createCallbackInput(
 	}
 
 	originalCaller := runtime.GetOriginalCallerAddress()
-
 	caller := context.address
-	lastTransferInfo := context.extractLastTransferWithoutData(caller, vmOutput)
+	lastTransferData := context.extractLastTransferWithoutData(caller, vmOutput)
 
 	// Return to the sender SC, calling its specified callback method.
 	contractCallInput := &vmcommon.ContractCallInput{
@@ -280,7 +294,7 @@ func (context *asyncContext) createCallbackInput(
 			OriginalCallerAddr:   originalCaller,
 			CallerAddr:           actualCallbackInitiator,
 			Arguments:            arguments,
-			CallValue:            lastTransferInfo.callValue,
+			CallValue:            lastTransferData.callValue,
 			CallType:             vm.AsynchronousCallBack,
 			GasPrice:             runtime.GetVMInput().GasPrice,
 			GasProvided:          gasLimit,
@@ -289,7 +303,7 @@ func (context *asyncContext) createCallbackInput(
 			OriginalTxHash:       runtime.GetOriginalTxHash(),
 			PrevTxHash:           runtime.GetPrevTxHash(),
 			ReturnCallAfterError: returnWithError,
-			ESDTTransfers:        lastTransferInfo.lastESDTTransfers,
+			ESDTTransfers:        lastTransferData.lastESDTTransfers,
 		},
 		RecipientAddr: caller,
 		Function:      callbackFunction,

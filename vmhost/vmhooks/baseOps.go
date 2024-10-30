@@ -1421,6 +1421,132 @@ func CreateAsyncCallWithTypedArgs(host vmhost.VMHost,
 	return 0
 }
 
+// CreateAsyncV3Call VMHooks implementation.
+// @autogenerate(VMHooks)
+func (context *VMHooksImpl) CreateAsyncV3Call(
+	destOffset executor.MemPtr,
+	valueOffset executor.MemPtr,
+	dataOffset executor.MemPtr,
+	dataLength executor.MemLength,
+	successOffset executor.MemPtr,
+	successLength executor.MemLength,
+	errorOffset executor.MemPtr,
+	errorLength executor.MemLength,
+	gas int64,
+	extraGasForCallback int64,
+) int32 {
+	host := context.GetVMHost()
+	return context.CreateAsyncV3CallWithHost(
+		host,
+		destOffset,
+		valueOffset,
+		dataOffset,
+		dataLength,
+		successOffset,
+		successLength,
+		errorOffset,
+		errorLength,
+		gas,
+		extraGasForCallback)
+}
+
+// CreateAsyncV3CallWithHost - createAsyncV3Call with host instead of pointer
+func (context *VMHooksImpl) CreateAsyncV3CallWithHost(host vmhost.VMHost,
+	destOffset executor.MemPtr,
+	valueOffset executor.MemPtr,
+	dataOffset executor.MemPtr,
+	dataLength executor.MemLength,
+	successOffset executor.MemPtr,
+	successLength executor.MemLength,
+	errorOffset executor.MemPtr,
+	errorLength executor.MemLength,
+	gas int64,
+	extraGasForCallback int64,
+) int32 {
+	runtime := host.Runtime()
+
+	calledSCAddress, err := context.MemLoad(destOffset, vmhost.AddressLen)
+	if WithFaultAndHost(host, err, runtime.BaseOpsErrorShouldFailExecution()) {
+		return 1
+	}
+
+	value, err := context.MemLoad(valueOffset, vmhost.BalanceLen)
+	if WithFaultAndHost(host, err, runtime.BaseOpsErrorShouldFailExecution()) {
+		return 1
+	}
+
+	data, err := context.MemLoad(dataOffset, dataLength)
+	if WithFaultAndHost(host, err, runtime.BaseOpsErrorShouldFailExecution()) {
+		return 1
+	}
+
+	successFunc, err := context.MemLoad(successOffset, successLength)
+	if WithFaultAndHost(host, err, runtime.BaseOpsErrorShouldFailExecution()) {
+		return 1
+	}
+
+	errorFunc, err := context.MemLoad(errorOffset, errorLength)
+	if WithFaultAndHost(host, err, runtime.BaseOpsErrorShouldFailExecution()) {
+		return 1
+	}
+
+	return CreateAsyncCallV3WithTypedArgs(host,
+		calledSCAddress,
+		value,
+		data,
+		successFunc,
+		errorFunc,
+		gas,
+		extraGasForCallback,
+		nil)
+}
+
+// CreateAsyncCallV3WithTypedArgs - createAsyncV3Call with arguments already read from memory
+func CreateAsyncCallV3WithTypedArgs(host vmhost.VMHost,
+	calledSCAddress []byte,
+	value []byte,
+	data []byte,
+	successFunc []byte,
+	errorFunc []byte,
+	gas int64,
+	extraGasForCallback int64,
+	callbackClosure []byte) int32 {
+
+	metering := host.Metering()
+	runtime := host.Runtime()
+	async := host.Async()
+
+	metering.StartGasTracing(createAsyncCallName)
+
+	gasToUse := metering.GasSchedule().BaseOpsAPICost.CreateAsyncCall
+	metering.UseAndTraceGas(gasToUse)
+
+	asyncCall := &vmhost.AsyncCall{
+		Status:          vmhost.AsyncCallPending,
+		Destination:     calledSCAddress,
+		Data:            data,
+		ValueBytes:      value,
+		GasLimit:        uint64(gas),
+		SuccessCallback: string(successFunc),
+		ErrorCallback:   string(errorFunc),
+		GasLocked:       uint64(extraGasForCallback),
+		CallbackClosure: callbackClosure,
+		IsAsyncV3:       true,
+	}
+
+	if asyncCall.HasDefinedAnyCallback() {
+		gasToUse := metering.GasSchedule().BaseOpsAPICost.SetAsyncCallback
+		metering.UseAndTraceGas(gasToUse)
+	}
+
+	err := async.RegisterAsyncCall("", asyncCall)
+	if WithFaultAndHost(host, err, runtime.BaseOpsErrorShouldFailExecution()) {
+		return 1
+	}
+
+	return 0
+}
+
 // SetAsyncContextCallback VMHooks implementation.
 // @autogenerate(VMHooks)
 func (context *VMHooksImpl) SetAsyncContextCallback(

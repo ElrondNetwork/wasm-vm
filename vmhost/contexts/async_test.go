@@ -2,9 +2,11 @@ package contexts
 
 import (
 	"errors"
-	"github.com/multiversx/mx-chain-vm-go/wasmer2"
 	"math/big"
 	"testing"
+
+	"github.com/multiversx/mx-chain-core-go/core"
+	"github.com/multiversx/mx-chain-vm-go/wasmer2"
 
 	"github.com/multiversx/mx-chain-core-go/data/vm"
 	"github.com/multiversx/mx-chain-core-go/marshal"
@@ -497,6 +499,79 @@ func TestAsyncContext_UpdateCurrentCallStatus(t *testing.T) {
 	require.False(t, isLegacy)
 	require.NotNil(t, asyncCall)
 	require.Equal(t, vmhost.AsyncCallRejected, asyncCall.Status)
+}
+
+func TestAsyncContext_OutputInCaseOfErrorInCallback(t *testing.T) {
+	user := []byte("user")
+	contractA := []byte("contractA")
+	contractB := []byte("contractB")
+
+	host, _ := initializeVMAndWasmerAsyncContext(t)
+	host.EnableEpochsHandlerField = &worldmock.EnableEpochsHandlerStub{
+		IsFlagEnabledCalled: func(flag core.EnableEpochFlag) bool {
+			return flag == vmhost.AsyncV3Flag
+		},
+	}
+
+	async := makeAsyncContext(t, host, contractA)
+	host.Storage().SetAddress(contractA)
+	host.AsyncContext = async
+
+	vmInput := &vmcommon.ContractCallInput{
+		VMInput: vmcommon.VMInput{
+			CallerAddr: user,
+			Arguments:  [][]byte{{0}},
+			CallType:   vm.DirectCall,
+		},
+		RecipientAddr: contractA,
+	}
+	host.Runtime().InitStateFromContractCallInput(vmInput)
+
+	err := async.RegisterAsyncCall("", &vmhost.AsyncCall{
+		Destination: contractB,
+		Data:        []byte("function"),
+	})
+	require.Nil(t, err)
+
+	err = async.Save()
+	require.Nil(t, err)
+
+	asyncCallId := async.GetCallID()
+	asyncStoragePrefix := host.Storage().GetVmProtectedPrefix(vmhost.AsyncDataPrefix)
+	asyncCallKey := vmhost.CustomStorageKey(string(asyncStoragePrefix), asyncCallId)
+
+	data, _, _, _ := host.Storage().GetStorageUnmetered(asyncCallKey)
+	require.NotEqual(t, len(data), 0)
+
+	vmInput = &vmcommon.ContractCallInput{
+		VMInput: vmcommon.VMInput{
+			CallerAddr: contractB,
+			Arguments:  [][]byte{{0}},
+			CallType:   vm.AsynchronousCallBack,
+		},
+		RecipientAddr: contractA,
+	}
+	host.Runtime().InitStateFromContractCallInput(vmInput)
+
+	async.callbackAsyncInitiatorCallID = asyncCallId
+	async.callType = vmInput.CallType
+	err = async.LoadParentContext()
+	require.Nil(t, err)
+
+	vmOutput := host.Output().CreateVMOutputInCaseOfError(vmhost.ErrNotEnoughGas)
+	outputAccount := vmOutput.OutputAccounts[string(contractA)]
+
+	require.NotNil(t, outputAccount)
+
+	storageUpdates := outputAccount.StorageUpdates
+	require.Equal(t, len(storageUpdates), 1)
+
+	asyncContextDeletionUpdate := storageUpdates[string(asyncCallKey)]
+	require.NotNil(t, asyncContextDeletionUpdate)
+	require.Equal(t, len(asyncContextDeletionUpdate.Data), 0)
+
+	data, _, _, _ = host.Storage().GetStorageUnmetered(asyncCallKey)
+	require.Equal(t, len(data), 0)
 }
 
 func TestAsyncContext_SendAsyncCallCrossShard(t *testing.T) {

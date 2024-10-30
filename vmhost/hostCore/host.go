@@ -42,6 +42,7 @@ var allFlags = []core.EnableEpochFlag{
 	vmhost.CryptoOpcodesV2Flag,
 	vmhost.MultiESDTNFTTransferAndExecuteByUserFlag,
 	vmhost.UseGasBoundedShouldFailExecutionFlag,
+	vmhost.AsyncV3Flag,
 }
 
 // vmHost implements HostContext interface.
@@ -95,7 +96,7 @@ func NewVMHost(
 	if check.IfNil(hostParameters.EnableEpochsHandler) {
 		return nil, vmhost.ErrNilEnableEpochsHandler
 	}
-	err := core.CheckHandlerCompatibility(hostParameters.EnableEpochsHandler, allFlags)
+	err := core.CheckHandlerCompatibility(hostParameters.EnableEpochsHandler, []core.EnableEpochFlag{})
 	if err != nil {
 		return nil, err
 	}

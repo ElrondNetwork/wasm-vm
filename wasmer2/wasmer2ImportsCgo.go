@@ -32,6 +32,7 @@ package wasmer2
 // extern int32_t   w2_transferESDTNFTExecute(void* context, int32_t destOffset, int32_t tokenIDOffset, int32_t tokenIDLen, int32_t valueOffset, long long nonce, long long gasLimit, int32_t functionOffset, int32_t functionLength, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
 // extern int32_t   w2_multiTransferESDTNFTExecute(void* context, int32_t destOffset, int32_t numTokenTransfers, int32_t tokenTransfersArgsLengthOffset, int32_t tokenTransferDataOffset, long long gasLimit, int32_t functionOffset, int32_t functionLength, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
 // extern int32_t   w2_createAsyncCall(void* context, int32_t destOffset, int32_t valueOffset, int32_t dataOffset, int32_t dataLength, int32_t successOffset, int32_t successLength, int32_t errorOffset, int32_t errorLength, long long gas, long long extraGasForCallback);
+// extern int32_t   w2_createAsyncV3Call(void* context, int32_t destOffset, int32_t valueOffset, int32_t dataOffset, int32_t dataLength, int32_t successOffset, int32_t successLength, int32_t errorOffset, int32_t errorLength, long long gas, long long extraGasForCallback);
 // extern int32_t   w2_setAsyncContextCallback(void* context, int32_t callback, int32_t callbackLength, int32_t data, int32_t dataLength, long long gas);
 // extern void      w2_upgradeContract(void* context, int32_t destOffset, long long gasLimit, int32_t valueOffset, int32_t codeOffset, int32_t codeMetadataOffset, int32_t length, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
 // extern void      w2_upgradeFromSourceContract(void* context, int32_t destOffset, long long gasLimit, int32_t valueOffset, int32_t sourceContractAddressOffset, int32_t codeMetadataOffset, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
@@ -309,6 +310,7 @@ func populateCgoFunctionPointers() *cWasmerVmHookPointers {
 		transfer_esdt_nft_execute_func_ptr:                       funcPointer(C.w2_transferESDTNFTExecute),
 		multi_transfer_esdt_nft_execute_func_ptr:                 funcPointer(C.w2_multiTransferESDTNFTExecute),
 		create_async_call_func_ptr:                               funcPointer(C.w2_createAsyncCall),
+		create_async_v3_call_func_ptr: 							  funcPointer(C.w2_createAsyncV3Call),
 		set_async_context_callback_func_ptr:                      funcPointer(C.w2_setAsyncContextCallback),
 		upgrade_contract_func_ptr:                                funcPointer(C.w2_upgradeContract),
 		upgrade_from_source_contract_func_ptr:                    funcPointer(C.w2_upgradeFromSourceContract),
@@ -681,6 +683,12 @@ func w2_multiTransferESDTNFTExecute(context unsafe.Pointer, destOffset int32, nu
 func w2_createAsyncCall(context unsafe.Pointer, destOffset int32, valueOffset int32, dataOffset int32, dataLength int32, successOffset int32, successLength int32, errorOffset int32, errorLength int32, gas int64, extraGasForCallback int64) int32 {
 	vmHooks := getVMHooksFromContextRawPtr(context)
 	return vmHooks.CreateAsyncCall(executor.MemPtr(destOffset), executor.MemPtr(valueOffset), executor.MemPtr(dataOffset), dataLength, executor.MemPtr(successOffset), successLength, executor.MemPtr(errorOffset), errorLength, gas, extraGasForCallback)
+}
+
+//export w2_createAsyncV3Call
+func w2_createAsyncV3Call(context unsafe.Pointer, destOffset int32, valueOffset int32, dataOffset int32, dataLength int32, successOffset int32, successLength int32, errorOffset int32, errorLength int32, gas int64, extraGasForCallback int64) int32 {
+	vmHooks := getVMHooksFromContextRawPtr(context)
+	return vmHooks.CreateAsyncV3Call(executor.MemPtr(destOffset), executor.MemPtr(valueOffset), executor.MemPtr(dataOffset), dataLength, executor.MemPtr(successOffset), successLength, executor.MemPtr(errorOffset), errorLength, gas, extraGasForCallback)
 }
 
 //export w2_setAsyncContextCallback
