@@ -62,7 +62,7 @@ func PadBytesLeft(data []byte, size int) []byte {
 		return data
 	}
 
-	paddedBytes := make([]byte, padSize)
+	paddedBytes := make([]byte, 0, padSize)
 	paddedBytes = append(paddedBytes, data...)
 	return paddedBytes
 }
