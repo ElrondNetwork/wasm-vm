@@ -105,6 +105,26 @@ func (b *BlockchainContextMock) CurrentTimeStamp() uint64 {
 	return 0
 }
 
+// RoundTime -
+func (b *BlockchainContextMock) RoundTime() uint64 {
+	return 0
+}
+
+// EpochStartBlockTimeStamp -
+func (b *BlockchainContextMock) EpochStartBlockTimeStamp() uint64 {
+	return 0
+}
+
+// EpochStartBlockNonce -
+func (b *BlockchainContextMock) EpochStartBlockNonce() uint64 {
+	return 0
+}
+
+// EpochStartBlockRound -
+func (b *BlockchainContextMock) EpochStartBlockRound() uint64 {
+	return 0
+}
+
 // CurrentRandomSeed -
 func (b *BlockchainContextMock) CurrentRandomSeed() []byte {
 	return bytes.Repeat([]byte{1}, 32)

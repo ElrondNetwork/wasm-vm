@@ -606,6 +606,42 @@ func (w *WrapperVMHooks) GetPrevBlockRandomSeed(pointer executor.MemPtr) {
 	w.logger.LogVMHookCallAfter(callInfo)
 }
 
+// GetRoundTime VM hook wrapper
+func (w *WrapperVMHooks) GetRoundTime() int64 {
+	callInfo := "GetRoundTime()"
+	w.logger.LogVMHookCallBefore(callInfo)
+	result := w.wrappedVMHooks.GetRoundTime()
+	w.logger.LogVMHookCallAfter(callInfo)
+	return result
+}
+
+// EpochStartBlockTimeStamp VM hook wrapper
+func (w *WrapperVMHooks) EpochStartBlockTimeStamp() int64 {
+	callInfo := "EpochStartBlockTimeStamp()"
+	w.logger.LogVMHookCallBefore(callInfo)
+	result := w.wrappedVMHooks.EpochStartBlockTimeStamp()
+	w.logger.LogVMHookCallAfter(callInfo)
+	return result
+}
+
+// EpochStartBlockNonce VM hook wrapper
+func (w *WrapperVMHooks) EpochStartBlockNonce() int64 {
+	callInfo := "EpochStartBlockNonce()"
+	w.logger.LogVMHookCallBefore(callInfo)
+	result := w.wrappedVMHooks.EpochStartBlockNonce()
+	w.logger.LogVMHookCallAfter(callInfo)
+	return result
+}
+
+// EpochStartBlockRound VM hook wrapper
+func (w *WrapperVMHooks) EpochStartBlockRound() int64 {
+	callInfo := "EpochStartBlockRound()"
+	w.logger.LogVMHookCallBefore(callInfo)
+	result := w.wrappedVMHooks.EpochStartBlockRound()
+	w.logger.LogVMHookCallAfter(callInfo)
+	return result
+}
+
 // Finish VM hook wrapper
 func (w *WrapperVMHooks) Finish(pointer executor.MemPtr, length executor.MemLength) {
 	callInfo := fmt.Sprintf("Finish(%d, %d)", pointer, length)

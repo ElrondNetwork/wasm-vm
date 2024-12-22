@@ -84,6 +84,10 @@ type BlockchainContext interface {
 	CurrentNonce() uint64
 	CurrentTimeStamp() uint64
 	CurrentRandomSeed() []byte
+	RoundTime() uint64
+	EpochStartBlockTimeStamp() uint64
+	EpochStartBlockNonce() uint64
+	EpochStartBlockRound() uint64
 	LastRandomSeed() []byte
 	IncreaseNonce(addr []byte)
 	GetCodeHash(addr []byte) []byte

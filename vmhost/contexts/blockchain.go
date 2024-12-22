@@ -247,6 +247,26 @@ func (context *blockchainContext) CurrentRandomSeed() []byte {
 	return context.blockChainHook.CurrentRandomSeed()
 }
 
+// RoundTime returns the duruation of a round
+func (context *blockchainContext) RoundTime() uint64 {
+	return context.blockChainHook.RoundTime()
+}
+
+// EpochStartBlockTimeStamp returns the timestamp of the first block of the current epoch.
+func (context *blockchainContext) EpochStartBlockTimeStamp() uint64 {
+	return context.blockChainHook.EpochStartBlockTimeStamp()
+}
+
+// EpochStartBlockNonce returns the nonce of the first block of the current epoch.
+func (context *blockchainContext) EpochStartBlockNonce() uint64 {
+	return context.blockChainHook.EpochStartBlockNonce()
+}
+
+// EpochStartBlockRound returns the round of the first block of the current epoch.
+func (context *blockchainContext) EpochStartBlockRound() uint64 {
+	return context.blockChainHook.EpochStartBlockRound()
+}
+
 // GetOwnerAddress returns the owner address of the contract being executed.
 func (context *blockchainContext) GetOwnerAddress() ([]byte, error) {
 	scAddress := context.host.Runtime().GetContextAddress()

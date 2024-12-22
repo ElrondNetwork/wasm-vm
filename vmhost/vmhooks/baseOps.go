@@ -100,6 +100,10 @@ const (
 	getOriginalTxHashName            = "getOriginalTxHash"
 	getCurrentTxHashName             = "getCurrentTxHash"
 	getPrevTxHashName                = "getPrevTxHash"
+	getRoundTimeName                 = "getRoundTime"
+	epochStartBlockTimeStampName     = "epochStartBlockTimeStamp"
+	epochStartBlockNonceName         = "epochStartBlockNonce"
+	epochStartBlockRoundName         = "epochStartBlockRound"
 )
 
 type CreateContractCallType int
@@ -2907,6 +2911,71 @@ func (context *VMHooksImpl) GetPrevBlockRandomSeed(pointer executor.MemPtr) {
 	if err != nil {
 		context.FailExecution(err)
 	}
+}
+
+// GetRoundTime VMHooks implementation.
+// @autogenerate(VMHooks)
+func (context *VMHooksImpl) GetRoundTime() int64 {
+	blockchain := context.GetBlockchainContext()
+	metering := context.GetMeteringContext()
+
+	gasToUse := metering.GasSchedule().BaseOpsAPICost.GetRoundTime
+	err := metering.UseGasBoundedAndAddTracedGas(getRoundTimeName, gasToUse)
+	if err != nil {
+		context.FailExecution(err)
+		return -1
+	}
+
+	return int64(blockchain.RoundTime())
+}
+
+// EpochStartBlockTimeStamp VMHooks implementation.
+// @autogenerate(VMHooks)
+func (context *VMHooksImpl) EpochStartBlockTimeStamp() int64 {
+	blockchain := context.GetBlockchainContext()
+	metering := context.GetMeteringContext()
+
+	gasToUse := metering.GasSchedule().BaseOpsAPICost.EpochStartBlockTimeStamp
+	err := metering.UseGasBoundedAndAddTracedGas(epochStartBlockTimeStampName, gasToUse)
+	if err != nil {
+		context.FailExecution(err)
+		return -1
+	}
+
+	return int64(blockchain.EpochStartBlockTimeStamp())
+}
+
+// EpochStartBlockNonce VMHooks implementation.
+// @autogenerate(VMHooks)
+func (context *VMHooksImpl) EpochStartBlockNonce() int64 {
+	blockchain := context.GetBlockchainContext()
+	metering := context.GetMeteringContext()
+
+	gasToUse := metering.GasSchedule().BaseOpsAPICost.EpochStartBlockNonce
+	err := metering.UseGasBoundedAndAddTracedGas(epochStartBlockNonceName, gasToUse)
+	if err != nil {
+		context.FailExecution(err)
+		return -1
+	}
+
+	return int64(blockchain.EpochStartBlockNonce())
+}
+
+// EpochStartBlockRound VMHooks implementation.
+// @autogenerate(VMHooks)
+func (context *VMHooksImpl) EpochStartBlockRound() int64 {
+	blockchain := context.GetBlockchainContext()
+	metering := context.GetMeteringContext()
+
+	gasToUse := metering.GasSchedule().BaseOpsAPICost.EpochStartBlockRound
+
+	err := metering.UseGasBoundedAndAddTracedGas(epochStartBlockRoundName, gasToUse)
+	if err != nil {
+		context.FailExecution(err)
+		return -1
+	}
+
+	return int64(blockchain.EpochStartBlockRound())
 }
 
 // Finish VMHooks implementation.

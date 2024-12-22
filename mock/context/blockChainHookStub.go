@@ -11,20 +11,25 @@ var _ vmcommon.BlockchainHook = (*BlockchainHookStub)(nil)
 
 // BlockchainHookStub is used in tests to check that interface methods were called
 type BlockchainHookStub struct {
-	NewAddressCalled                        func(creatorAddress []byte, creatorNonce uint64, vmType []byte) ([]byte, error)
-	GetStorageDataCalled                    func(accountsAddress []byte, index []byte) ([]byte, uint32, error)
-	GetBlockHashCalled                      func(nonce uint64) ([]byte, error)
-	LastNonceCalled                         func() uint64
-	LastRoundCalled                         func() uint64
-	LastTimeStampCalled                     func() uint64
-	LastRandomSeedCalled                    func() []byte
-	LastEpochCalled                         func() uint32
-	GetStateRootHashCalled                  func() []byte
-	CurrentNonceCalled                      func() uint64
-	CurrentRoundCalled                      func() uint64
-	CurrentTimeStampCalled                  func() uint64
-	CurrentRandomSeedCalled                 func() []byte
-	CurrentEpochCalled                      func() uint32
+	NewAddressCalled               func(creatorAddress []byte, creatorNonce uint64, vmType []byte) ([]byte, error)
+	GetStorageDataCalled           func(accountsAddress []byte, index []byte) ([]byte, uint32, error)
+	GetBlockHashCalled             func(nonce uint64) ([]byte, error)
+	LastNonceCalled                func() uint64
+	LastRoundCalled                func() uint64
+	LastTimeStampCalled            func() uint64
+	LastRandomSeedCalled           func() []byte
+	LastEpochCalled                func() uint32
+	GetStateRootHashCalled         func() []byte
+	CurrentNonceCalled             func() uint64
+	CurrentRoundCalled             func() uint64
+	CurrentTimeStampCalled         func() uint64
+	CurrentRandomSeedCalled        func() []byte
+	CurrentEpochCalled             func() uint32
+	RoundTimeCalled                func() uint64
+	EpochStartBlockTimeStampCalled func() uint64
+	EpochStartBlockNonceCalled     func() uint64
+	EpochStartBlockRoundCalled     func() uint64
+
 	ProcessBuiltInFunctionCalled            func(input *vmcommon.ContractCallInput) (*vmcommon.VMOutput, error)
 	GetBuiltinFunctionNamesCalled           func() vmcommon.FunctionNames
 	GetAllStateCalled                       func(address []byte) (map[string][]byte, error)
@@ -149,6 +154,38 @@ func (b *BlockchainHookStub) CurrentRandomSeed() []byte {
 func (b *BlockchainHookStub) CurrentEpoch() uint32 {
 	if b.CurrentEpochCalled != nil {
 		return b.CurrentEpochCalled()
+	}
+	return 0
+}
+
+// RoundTime mocked method
+func (b *BlockchainHookStub) RoundTime() uint64 {
+	if b.RoundTimeCalled != nil {
+		return b.RoundTimeCalled()
+	}
+	return 0
+}
+
+// EpochStartBlockTimeStamp mocked method
+func (b *BlockchainHookStub) EpochStartBlockTimeStamp() uint64 {
+	if b.EpochStartBlockTimeStampCalled != nil {
+		return b.EpochStartBlockTimeStampCalled()
+	}
+	return 0
+}
+
+// EpochStartBlockNonce mocked method
+func (b *BlockchainHookStub) EpochStartBlockNonce() uint64 {
+	if b.EpochStartBlockNonceCalled != nil {
+		return b.EpochStartBlockNonceCalled()
+	}
+	return 0
+}
+
+// EpochStartBlockRound VMHooks implementation.
+func (b *BlockchainHookStub) EpochStartBlockRound() uint64 {
+	if b.EpochStartBlockRoundCalled != nil {
+		return b.EpochStartBlockRoundCalled()
 	}
 	return 0
 }

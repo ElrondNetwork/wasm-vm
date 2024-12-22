@@ -78,6 +78,10 @@ package wasmer2
 // extern long long w2_getPrevBlockRound(void* context);
 // extern long long w2_getPrevBlockEpoch(void* context);
 // extern void      w2_getPrevBlockRandomSeed(void* context, int32_t pointer);
+// extern long long w2_getRoundTime(void* context);
+// extern long long w2_epochStartBlockTimeStamp(void* context);
+// extern long long w2_epochStartBlockNonce(void* context);
+// extern long long w2_epochStartBlockRound(void* context);
 // extern void      w2_finish(void* context, int32_t pointer, int32_t length);
 // extern int32_t   w2_executeOnSameContext(void* context, long long gasLimit, int32_t addressOffset, int32_t valueOffset, int32_t functionOffset, int32_t functionLength, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
 // extern int32_t   w2_executeOnDestContext(void* context, long long gasLimit, int32_t addressOffset, int32_t valueOffset, int32_t functionOffset, int32_t functionLength, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
@@ -355,6 +359,10 @@ func populateCgoFunctionPointers() *cWasmerVmHookPointers {
 		get_prev_block_round_func_ptr:                            funcPointer(C.w2_getPrevBlockRound),
 		get_prev_block_epoch_func_ptr:                            funcPointer(C.w2_getPrevBlockEpoch),
 		get_prev_block_random_seed_func_ptr:                      funcPointer(C.w2_getPrevBlockRandomSeed),
+		get_round_time_func_ptr:                                  funcPointer(C.w2_getRoundTime),
+		epoch_start_block_time_stamp_func_ptr:                    funcPointer(C.w2_epochStartBlockTimeStamp),
+		epoch_start_block_nonce_func_ptr:                         funcPointer(C.w2_epochStartBlockNonce),
+		epoch_start_block_round_func_ptr:                         funcPointer(C.w2_epochStartBlockRound),
 		finish_func_ptr:                                          funcPointer(C.w2_finish),
 		execute_on_same_context_func_ptr:                         funcPointer(C.w2_executeOnSameContext),
 		execute_on_dest_context_func_ptr:                         funcPointer(C.w2_executeOnDestContext),
@@ -957,6 +965,30 @@ func w2_getPrevBlockEpoch(context unsafe.Pointer) int64 {
 func w2_getPrevBlockRandomSeed(context unsafe.Pointer, pointer int32) {
 	vmHooks := getVMHooksFromContextRawPtr(context)
 	vmHooks.GetPrevBlockRandomSeed(executor.MemPtr(pointer))
+}
+
+//export w2_getRoundTime
+func w2_getRoundTime(context unsafe.Pointer) int64 {
+	vmHooks := getVMHooksFromContextRawPtr(context)
+	return vmHooks.GetRoundTime()
+}
+
+//export w2_epochStartBlockTimeStamp
+func w2_epochStartBlockTimeStamp(context unsafe.Pointer) int64 {
+	vmHooks := getVMHooksFromContextRawPtr(context)
+	return vmHooks.EpochStartBlockTimeStamp()
+}
+
+//export w2_epochStartBlockNonce
+func w2_epochStartBlockNonce(context unsafe.Pointer) int64 {
+	vmHooks := getVMHooksFromContextRawPtr(context)
+	return vmHooks.EpochStartBlockNonce()
+}
+
+//export w2_epochStartBlockRound
+func w2_epochStartBlockRound(context unsafe.Pointer) int64 {
+	vmHooks := getVMHooksFromContextRawPtr(context)
+	return vmHooks.EpochStartBlockRound()
 }
 
 //export w2_finish

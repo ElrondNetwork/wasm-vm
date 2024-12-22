@@ -122,6 +122,10 @@ const (
     GetCodeMetadata = 100
     IsBuiltinFunction = 100
     IsReservedFunctionName = 100
+    GetRoundTime = 100
+    EpochStartBlockTimeStamp = 100
+    EpochStartBlockNonce = 100
+    EpochStartBlockRound = 100
 
 [EthAPICost]
     UseGas = 100
@@ -957,6 +961,10 @@ const (
     GetCodeMetadata = 100
     IsBuiltinFunction = 100
     IsReservedFunctionName = 100
+    GetRoundTime = 100
+    EpochStartBlockTimeStamp = 100
+    EpochStartBlockNonce = 100
+    EpochStartBlockRound = 100
 
 [EthAPICost]
     UseGas = 100

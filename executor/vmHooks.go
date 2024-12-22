@@ -86,6 +86,10 @@ type MainVMHooks interface {
 	GetPrevBlockRound() int64
 	GetPrevBlockEpoch() int64
 	GetPrevBlockRandomSeed(pointer MemPtr)
+	GetRoundTime() int64
+	EpochStartBlockTimeStamp() int64
+	EpochStartBlockNonce() int64
+	EpochStartBlockRound() int64
 	Finish(pointer MemPtr, length MemLength)
 	ExecuteOnSameContext(gasLimit int64, addressOffset MemPtr, valueOffset MemPtr, functionOffset MemPtr, functionLength MemLength, numArguments int32, argumentsLengthOffset MemPtr, dataOffset MemPtr) int32
 	ExecuteOnDestContext(gasLimit int64, addressOffset MemPtr, valueOffset MemPtr, functionOffset MemPtr, functionLength MemLength, numArguments int32, argumentsLengthOffset MemPtr, dataOffset MemPtr) int32
