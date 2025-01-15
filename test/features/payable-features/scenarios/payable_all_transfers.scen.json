@@ -1,6 +1,5 @@
 {
     "name": "payable",
-    "gasSchedule": "v3",
     "steps": [
         {
             "step": "setState",
@@ -14,9 +13,8 @@
                     "nonce": "0",
                     "balance": "10000",
                     "esdt": {
-                        "str:TOK-000001": "1000",
-                        "str:TOK-000002": "500",
-                        "str:TOK-000003": "500",
+                        "str:TOK-123456": "1000",
+                        "str:OTHERTOK-123456": "500",
                         "str:SFT-123": {
                             "instances": [
                                 {
@@ -31,38 +29,20 @@
         },
         {
             "step": "scCall",
-            "id": "payment-array-too-many",
+            "id": "payable_all_transfers-ZERO",
             "tx": {
                 "from": "address:an-account",
                 "to": "sc:payable-features",
-                "esdtValue": [
-                    {
-                        "tokenIdentifier": "str:TOK-000001",
-                        "value": "100"
-                    },
-                    {
-                        "tokenIdentifier": "str:TOK-000002",
-                        "value": "400"
-                    },
-                    {
-                        "tokenIdentifier": "str:TOK-000003",
-                        "value": "400"
-                    },
-                    {
-                        "tokenIdentifier": "str:SFT-123",
-                        "nonce": "5",
-                        "value": "10"
-                    }
-                ],
-                "function": "payment_array_esdt_3",
+                "function": "payable_all_transfers",
                 "arguments": [],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
             "expect": {
-                "out": [],
-                "status": "4",
-                "message": "str:incorrect number of ESDT transfers",
+                "out": [
+                    ""
+                ],
+                "status": "",
                 "logs": "*",
                 "gas": "*",
                 "refund": "*"
@@ -70,30 +50,23 @@
         },
         {
             "step": "scCall",
-            "id": "payment-array-too-few",
+            "id": "payable_all_transfers-EGLD",
             "tx": {
                 "from": "address:an-account",
                 "to": "sc:payable-features",
-                "esdtValue": [
-                    {
-                        "tokenIdentifier": "str:TOK-000001",
-                        "value": "100"
-                    },
-                    {
-                        "tokenIdentifier": "str:SFT-123",
-                        "nonce": "5",
-                        "value": "10"
-                    }
-                ],
-                "function": "payment_array_esdt_3",
+                "egldValue": "1000",
+                "function": "payable_all_transfers",
                 "arguments": [],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
             "expect": {
-                "out": [],
-                "status": "4",
-                "message": "str:incorrect number of ESDT transfers",
+                "out": [
+                    [
+                        "nested:str:EGLD|u64:0|biguint:1000"
+                    ]
+                ],
+                "status": "",
                 "logs": "*",
                 "gas": "*",
                 "refund": "*"
@@ -101,13 +74,55 @@
         },
         {
             "step": "scCall",
-            "id": "payment-array-bad-egld",
+            "id": "payable_all_transfers-multi-EGLD-2",
             "tx": {
                 "from": "address:an-account",
                 "to": "sc:payable-features",
                 "esdtValue": [
                     {
-                        "tokenIdentifier": "str:TOK-000003",
+                        "tokenIdentifier": "str:EGLD-000000",
+                        "value": "1001"
+                    },
+                    {
+                        "tokenIdentifier": "str:EGLD-000000",
+                        "value": "1002"
+                    }
+                ],
+                "function": "payable_all_transfers",
+                "arguments": [],
+                "gasLimit": "50,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [
+                    [
+                        "nested:str:EGLD|u64:0|biguint:1001",
+                        "nested:str:EGLD|u64:0|biguint:1002"
+                    ]
+                ],
+                "status": "",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "payable_all_transfers-EGLD-with-ESDT",
+            "tx": {
+                "from": "address:an-account",
+                "to": "sc:payable-features",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:TOK-123456",
+                        "value": "100"
+                    },
+                    {
+                        "tokenIdentifier": "str:EGLD-000000",
+                        "value": "1005"
+                    },
+                    {
+                        "tokenIdentifier": "str:OTHERTOK-123456",
                         "value": "400"
                     },
                     {
@@ -117,55 +132,23 @@
                     },
                     {
                         "tokenIdentifier": "str:EGLD-000000",
-                        "nonce": "0",
-                        "value": "103"
+                        "value": "1006"
                     }
                 ],
-                "function": "payment_array_esdt_3",
-                "arguments": [],
-                "gasLimit": "50,000,000",
-                "gasPrice": "0"
-            },
-            "expect": {
-                "out": [],
-                "status": "4",
-                "message": "str:unexpected EGLD transfer",
-                "logs": "*",
-                "gas": "*",
-                "refund": "*"
-            }
-        },
-        {
-            "step": "scCall",
-            "id": "payment-array-ok",
-            "tx": {
-                "from": "address:an-account",
-                "to": "sc:payable-features",
-                "esdtValue": [
-                    {
-                        "tokenIdentifier": "str:TOK-000001",
-                        "value": "100"
-                    },
-                    {
-                        "tokenIdentifier": "str:TOK-000002",
-                        "value": "400"
-                    },
-                    {
-                        "tokenIdentifier": "str:SFT-123",
-                        "nonce": "5",
-                        "value": "10"
-                    }
-                ],
-                "function": "payment_array_esdt_3",
+                "function": "payable_all_transfers",
                 "arguments": [],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
             "expect": {
                 "out": [
-                    "nested:str:TOK-000001|u64:0|biguint:100",
-                    "nested:str:TOK-000002|u64:0|biguint:400",
-                    "nested:str:SFT-123|u64:5|biguint:10"
+                    [
+                        "nested:str:TOK-123456|u64:0|biguint:100|",
+                        "nested:str:EGLD|u64:0|biguint:1005",
+                        "nested:str:OTHERTOK-123456|u64:0|biguint:400",
+                        "nested:str:SFT-123|u64:5|biguint:10",
+                        "nested:str:EGLD|u64:0|biguint:1006"
+                    ]
                 ],
                 "status": "",
                 "logs": "*",

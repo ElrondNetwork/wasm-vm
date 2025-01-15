@@ -1,5 +1,4 @@
 {
-    "gasSchedule": "v3",
     "steps": [
         {
             "step": "setState",
@@ -8,7 +7,7 @@
                     "nonce": "0",
                     "balance": "0",
                     "esdt": {
-                        "str:TEST-TOKENA": "2000"
+                        "str:FWD-TOKEN": "1000"
                     }
                 },
                 "sc:vault": {
@@ -19,7 +18,7 @@
                 "sc:forwarder": {
                     "nonce": "0",
                     "balance": "0",
-                    "code": "mxsc:../forwarder/output/forwarder.mxsc.json"
+                    "code": "mxsc:../promises-features/output/promises-features.mxsc.json"
                 }
             }
         },
@@ -31,15 +30,15 @@
                 "to": "sc:forwarder",
                 "esdtValue": [
                     {
-                        "tokenIdentifier": "str:TEST-TOKENA",
-                        "value": "2000"
+                        "tokenIdentifier": "str:FWD-TOKEN",
+                        "value": "1000"
                     }
                 ],
-                "function": "forward_transf_exec_accept_funds_twice",
+                "function": "forward_payment_callback",
                 "arguments": [
                     "sc:vault"
                 ],
-                "gasLimit": "50,000,000",
+                "gasLimit": "60,000,000",
                 "gasPrice": "0"
             },
             "expect": {
@@ -50,27 +49,37 @@
                         "address": "sc:forwarder",
                         "endpoint": "str:ESDTTransfer",
                         "topics": [
-                            "str:TEST-TOKENA",
-                            "0",
+                            "str:FWD-TOKEN",
+                            "",
                             "1000",
                             "sc:vault"
                         ],
                         "data": [
-                            "str:TransferAndExecute",
+                            "str:AsyncCall",
                             "str:ESDTTransfer",
-                            "str:TEST-TOKENA",
-                            "1000",
-                            "str:accept_funds"
+                            "str:FWD-TOKEN",
+                            "1000"
                         ]
                     },
                     {
                         "address": "sc:vault",
-                        "endpoint": "str:accept_funds",
+                        "endpoint": "str:transferValueOnly",
                         "topics": [
-                            "str:accept_funds",
-                            "str:TEST-TOKENA",
-                            "0",
-                            "1000"
+                            "",
+                            "sc:forwarder"
+                        ],
+                        "data": [
+                            "str:AsyncCallback",
+                            "str:transfer_callback",
+                            "0x00"
+                        ]
+                    },
+                    {
+                        "address": "sc:forwarder",
+                        "endpoint": "str:transfer_callback",
+                        "topics": [
+                            "str:callback_result",
+                            "0x00"
                         ],
                         "data": [
                             ""
@@ -78,29 +87,12 @@
                     },
                     {
                         "address": "sc:forwarder",
-                        "endpoint": "str:ESDTTransfer",
+                        "endpoint": "str:transfer_callback",
                         "topics": [
-                            "str:TEST-TOKENA",
-                            "0",
-                            "1000",
-                            "sc:vault"
-                        ],
-                        "data": [
-                            "str:TransferAndExecute",
-                            "str:ESDTTransfer",
-                            "str:TEST-TOKENA",
-                            "1000",
-                            "str:accept_funds"
-                        ]
-                    },
-                    {
-                        "address": "sc:vault",
-                        "endpoint": "str:accept_funds",
-                        "topics": [
-                            "str:accept_funds",
-                            "str:TEST-TOKENA",
-                            "0",
-                            "1000"
+                            "str:retrieve_funds_callback",
+                            "str:EGLD",
+                            "",
+                            ""
                         ],
                         "data": [
                             ""
@@ -117,9 +109,6 @@
                 "address:a_user": {
                     "nonce": "*",
                     "balance": "0",
-                    "esdt": {
-                        "str:TEST-TOKENA": "0"
-                    },
                     "storage": {},
                     "code": ""
                 },
@@ -127,18 +116,28 @@
                     "nonce": "0",
                     "balance": "0",
                     "esdt": {
-                        "str:TEST-TOKENA": "2000"
+                        "str:FWD-TOKEN": "1000"
                     },
                     "storage": {
-                        "str:call_counts|nested:str:accept_funds": "2"
+                        "str:call_counts|nested:str:accept_funds": "0"
                     },
                     "code": "mxsc:../vault/output/vault.mxsc.json"
                 },
                 "sc:forwarder": {
                     "nonce": "0",
                     "balance": "0",
-                    "storage": {},
-                    "code": "mxsc:../forwarder/output/forwarder.mxsc.json"
+                    "storage": {
+                        "str:callback_data.len": "1",
+                        "str:callback_data.item|u32:1": [
+                            "nested:str:transfer_callback",
+                            "nested:str:EGLD",
+                            "u64:0",
+                            "u32:0",
+                            "u32:0"
+                        ]
+
+                    },
+                    "code": "mxsc:../promises-features/output/promises-features.mxsc.json"
                 }
             }
         }
