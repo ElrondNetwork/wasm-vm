@@ -136,6 +136,7 @@ typedef struct {
   void (*managed_get_prev_block_random_seed_func_ptr)(void *context, int32_t result_handle);
   void (*managed_get_return_data_func_ptr)(void *context, int32_t result_id, int32_t result_handle);
   void (*managed_get_multi_esdt_call_value_func_ptr)(void *context, int32_t multi_call_value_handle);
+  void (*managed_get_all_transfers_call_value_func_ptr)(void *context, int32_t value_handle);
   void (*managed_get_back_transfers_func_ptr)(void *context, int32_t esdt_transfers_value_handle, int32_t egld_value_handle);
   void (*managed_get_esdt_balance_func_ptr)(void *context, int32_t address_handle, int32_t token_id_handle, int64_t nonce, int32_t value_handle);
   void (*managed_get_esdt_token_data_func_ptr)(void *context, int32_t address_handle, int32_t token_id_handle, int64_t nonce, int32_t value_handle, int32_t properties_handle, int32_t hash_handle, int32_t name_handle, int32_t attributes_handle, int32_t creator_handle, int32_t royalties_handle, int32_t uris_handle);

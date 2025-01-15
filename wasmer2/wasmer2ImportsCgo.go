@@ -109,6 +109,7 @@ package wasmer2
 // extern void      w2_managedGetPrevBlockRandomSeed(void* context, int32_t resultHandle);
 // extern void      w2_managedGetReturnData(void* context, int32_t resultID, int32_t resultHandle);
 // extern void      w2_managedGetMultiESDTCallValue(void* context, int32_t multiCallValueHandle);
+// extern void      w2_managedGetAllTransfersCallValue(void* context, int32_t valueHandle);
 // extern void      w2_managedGetBackTransfers(void* context, int32_t esdtTransfersValueHandle, int32_t egldValueHandle);
 // extern void      w2_managedGetESDTBalance(void* context, int32_t addressHandle, int32_t tokenIDHandle, long long nonce, int32_t valueHandle);
 // extern void      w2_managedGetESDTTokenData(void* context, int32_t addressHandle, int32_t tokenIDHandle, long long nonce, int32_t valueHandle, int32_t propertiesHandle, int32_t hashHandle, int32_t nameHandle, int32_t attributesHandle, int32_t creatorHandle, int32_t royaltiesHandle, int32_t urisHandle);
@@ -390,6 +391,7 @@ func populateCgoFunctionPointers() *cWasmerVmHookPointers {
 		managed_get_prev_block_random_seed_func_ptr:              funcPointer(C.w2_managedGetPrevBlockRandomSeed),
 		managed_get_return_data_func_ptr:                         funcPointer(C.w2_managedGetReturnData),
 		managed_get_multi_esdt_call_value_func_ptr:               funcPointer(C.w2_managedGetMultiESDTCallValue),
+		managed_get_all_transfers_call_value_func_ptr:            funcPointer(C.w2_managedGetAllTransfersCallValue),
 		managed_get_back_transfers_func_ptr:                      funcPointer(C.w2_managedGetBackTransfers),
 		managed_get_esdt_balance_func_ptr:                        funcPointer(C.w2_managedGetESDTBalance),
 		managed_get_esdt_token_data_func_ptr:                     funcPointer(C.w2_managedGetESDTTokenData),
@@ -1151,6 +1153,12 @@ func w2_managedGetReturnData(context unsafe.Pointer, resultID int32, resultHandl
 func w2_managedGetMultiESDTCallValue(context unsafe.Pointer, multiCallValueHandle int32) {
 	vmHooks := getVMHooksFromContextRawPtr(context)
 	vmHooks.ManagedGetMultiESDTCallValue(multiCallValueHandle)
+}
+
+//export w2_managedGetAllTransfersCallValue
+func w2_managedGetAllTransfersCallValue(context unsafe.Pointer, valueHandle int32) {
+	vmHooks := getVMHooksFromContextRawPtr(context)
+	vmHooks.ManagedGetAllTransfersCallValue(valueHandle)
 }
 
 //export w2_managedGetBackTransfers

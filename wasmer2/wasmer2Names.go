@@ -107,6 +107,7 @@ var functionNames = map[string]struct{}{
 	"managedGetPrevBlockRandomSeed":            empty,
 	"managedGetReturnData":                     empty,
 	"managedGetMultiESDTCallValue":             empty,
+	"managedGetAllTransfersCallValue":          empty,
 	"managedGetBackTransfers":                  empty,
 	"managedGetESDTBalance":                    empty,
 	"managedGetESDTTokenData":                  empty,

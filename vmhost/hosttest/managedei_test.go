@@ -1921,3 +1921,142 @@ func Test_ManagedMultiTransferESDTNFTExecuteByUser_ReturnOnFail(t *testing.T) {
 		})
 	assert.Nil(t, err)
 }
+
+func Test_ManagedManagedGetAllTransfersCallValue_NoCallValue(t *testing.T) {
+	testConfig := baseTestConfig
+
+	initialESDTTokenBalance := uint64(100)
+	transferESDTTokenValue := big.NewInt(5)
+
+	_, err := test.BuildMockInstanceCallTest(t).
+		WithContracts(
+			test.CreateMockContract(test.ChildAddress).
+				WithBalance(testConfig.ChildBalance).
+				WithConfig(testConfig).
+				WithCodeMetadata([]byte{0, (1 << vmcommon.MetadataPayableBySC) | (1 << vmcommon.MetadataPayable)}).
+				WithMethods(func(parentInstance *mock.InstanceMock, config interface{}) {}),
+			test.CreateMockContract(test.ParentAddress).
+				WithBalance(testConfig.ParentBalance).
+				WithConfig(testConfig).
+				WithMethods(func(parentInstance *mock.InstanceMock, config interface{}) {
+					parentInstance.AddMockMethod("testFunction", func() *mock.InstanceMock {
+						host := parentInstance.Host
+
+						transfers, err := vmhooks.ManagedGetAllTransfersCallValueTyped(host)
+						assert.Nil(t, err)
+
+						assert.Equal(t, 1, len(transfers))
+						assert.Equal(t, test.ESDTTestTokenName, transfers[0].ESDTTokenName)
+						assert.Equal(t, transferESDTTokenValue, transfers[0].ESDTValue)
+
+						return parentInstance
+					})
+				}),
+		).
+		WithSetup(func(host vmhost.VMHost, world *worldmock.MockWorld) {
+			createMockBuiltinFunctions(t, host, world)
+
+			parentAccount := world.AcctMap.GetAccount(test.ParentAddress)
+			_ = parentAccount.SetTokenBalanceUint64(test.ESDTTestTokenName, 0, initialESDTTokenBalance)
+		}).
+		WithInput(test.CreateTestContractCallInputBuilder().
+			WithRecipientAddr(test.ParentAddress).
+			WithGasProvided(testConfig.GasProvided).
+			WithFunction("testFunction").
+			WithESDTTokenName(test.ESDTTestTokenName).
+			WithESDTValue(transferESDTTokenValue).
+			Build()).
+		AndAssertResults(func(world *worldmock.MockWorld, verify *test.VMOutputVerifier) {
+			verify.
+				Ok()
+		})
+	assert.Nil(t, err)
+}
+
+func Test_ManagedManagedGetAllTransfersCallValue_NoTokenNoCallValue(t *testing.T) {
+	testConfig := baseTestConfig
+
+	_, err := test.BuildMockInstanceCallTest(t).
+		WithContracts(
+			test.CreateMockContract(test.ChildAddress).
+				WithBalance(testConfig.ChildBalance).
+				WithConfig(testConfig).
+				WithCodeMetadata([]byte{0, (1 << vmcommon.MetadataPayableBySC) | (1 << vmcommon.MetadataPayable)}).
+				WithMethods(func(parentInstance *mock.InstanceMock, config interface{}) {}),
+			test.CreateMockContract(test.ParentAddress).
+				WithBalance(testConfig.ParentBalance).
+				WithConfig(testConfig).
+				WithMethods(func(parentInstance *mock.InstanceMock, config interface{}) {
+					parentInstance.AddMockMethod("testFunction", func() *mock.InstanceMock {
+						host := parentInstance.Host
+
+						transfers, err := vmhooks.ManagedGetAllTransfersCallValueTyped(host)
+						assert.Nil(t, err)
+
+						assert.Equal(t, 0, len(transfers))
+
+						return parentInstance
+					})
+				}),
+		).
+		WithInput(test.CreateTestContractCallInputBuilder().
+			WithRecipientAddr(test.ParentAddress).
+			WithGasProvided(testConfig.GasProvided).
+			WithFunction("testFunction").
+			Build()).
+		AndAssertResults(func(world *worldmock.MockWorld, verify *test.VMOutputVerifier) {
+			verify.
+				Ok()
+		})
+	assert.Nil(t, err)
+}
+
+func Test_ManagedManagedGetAllTransfersCallValue_OnlyCallValue(t *testing.T) {
+	testConfig := baseTestConfig
+
+	initialBalance := int64(100)
+	transferValue := int64(5)
+
+	_, err := test.BuildMockInstanceCallTest(t).
+		WithContracts(
+			test.CreateMockContract(test.ChildAddress).
+				WithBalance(testConfig.ChildBalance).
+				WithConfig(testConfig).
+				WithCodeMetadata([]byte{0, (1 << vmcommon.MetadataPayableBySC) | (1 << vmcommon.MetadataPayable)}).
+				WithMethods(func(parentInstance *mock.InstanceMock, config interface{}) {}),
+			test.CreateMockContract(test.ParentAddress).
+				WithBalance(testConfig.ParentBalance).
+				WithConfig(testConfig).
+				WithMethods(func(parentInstance *mock.InstanceMock, config interface{}) {
+					parentInstance.AddMockMethod("testFunction", func() *mock.InstanceMock {
+						host := parentInstance.Host
+
+						transfers, err := vmhooks.ManagedGetAllTransfersCallValueTyped(host)
+						assert.Nil(t, err)
+
+						assert.Equal(t, 1, len(transfers))
+						assert.Equal(t, []byte("EGLD-000000"), transfers[0].ESDTTokenName)
+						assert.Equal(t, big.NewInt(transferValue), transfers[0].ESDTValue)
+
+						return parentInstance
+					})
+				}),
+		).
+		WithSetup(func(host vmhost.VMHost, world *worldmock.MockWorld) {
+			createMockBuiltinFunctions(t, host, world)
+
+			parentAccount := world.AcctMap.GetAccount(test.ParentAddress)
+			parentAccount.SetBalance(initialBalance)
+		}).
+		WithInput(test.CreateTestContractCallInputBuilder().
+			WithRecipientAddr(test.ParentAddress).
+			WithGasProvided(testConfig.GasProvided).
+			WithFunction("testFunction").
+			WithCallValue(transferValue).
+			Build()).
+		AndAssertResults(func(world *worldmock.MockWorld, verify *test.VMOutputVerifier) {
+			verify.
+				Ok()
+		})
+	assert.Nil(t, err)
+}

@@ -4,7 +4,9 @@ import (
 	"encoding/hex"
 	"errors"
 
+	"github.com/multiversx/mx-chain-core-go/core"
 	"github.com/multiversx/mx-chain-core-go/core/check"
+	vmcommon "github.com/multiversx/mx-chain-vm-common-go"
 	"github.com/multiversx/mx-chain-vm-common-go/builtInFunctions"
 
 	"github.com/multiversx/mx-chain-vm-go/executor"
@@ -32,6 +34,7 @@ const (
 	managedCreateAsyncCallName               = "managedCreateAsyncCall"
 	managedGetCallbackClosure                = "managedGetCallbackClosure"
 	managedGetMultiESDTCallValueName         = "managedGetMultiESDTCallValue"
+	managedGetAllTransfersCallValue          = "managedGetAllTransfersCallValue"
 	managedGetESDTBalanceName                = "managedGetESDTBalance"
 	managedGetESDTTokenDataName              = "managedGetESDTTokenData"
 	managedGetReturnDataName                 = "managedGetReturnData"
@@ -47,6 +50,8 @@ const (
 	managedIsBuiltinFunction                 = "managedIsBuiltinFunction"
 	managedMultiTransferESDTNFTExecuteByUser = "managedMultiTransferESDTNFTExecuteByUser"
 )
+
+const EGLDTokenName = "EGLD-000000" // TODO: maybe move to core?
 
 // ManagedSCAddress VMHooks implementation.
 // @autogenerate(VMHooks)
@@ -341,6 +346,58 @@ func (context *VMHooksImpl) ManagedGetMultiESDTCallValue(multiCallValueHandle in
 	}
 
 	managedType.SetBytes(multiCallValueHandle, multiCallBytes)
+}
+
+// ManagedGetAllTransfersCallValue VMHooks implementation.
+// @autogenerate(VMHooks)
+func (context *VMHooksImpl) ManagedGetAllTransfersCallValue(transferCallValuesListHandle int32) {
+	host := context.GetVMHost()
+	managedType := host.ManagedTypes()
+
+	allTransfers, err := ManagedGetAllTransfersCallValueTyped(host)
+	if err != nil {
+		context.FailExecution(err)
+		return
+	}
+
+	allTransfersBytes := writeESDTTransfersToBytes(managedType, allTransfers)
+	err = managedType.ConsumeGasForBytes(allTransfersBytes)
+	if err != nil {
+		context.FailExecution(err)
+		return
+	}
+
+	managedType.SetBytes(transferCallValuesListHandle, allTransfersBytes)
+}
+
+func ManagedGetAllTransfersCallValueTyped(
+	host vmhost.VMHost,
+) ([]*vmcommon.ESDTTransfer, error) {
+	runtime := host.Runtime()
+	metering := host.Metering()
+
+	gasToUse := metering.GasSchedule().BaseOpsAPICost.GetCallValue
+	err := metering.UseGasBoundedAndAddTracedGas(managedGetAllTransfersCallValue, gasToUse)
+	if err != nil {
+		return nil, err
+	}
+
+	input := runtime.GetVMInput()
+	egldCallValue := input.CallValue
+	hasCallValue := egldCallValue.Sign() > 0
+
+	if hasCallValue {
+		return []*vmcommon.ESDTTransfer{
+			{
+				ESDTValue:      egldCallValue,
+				ESDTTokenName:  []byte(EGLDTokenName),
+				ESDTTokenType:  uint32(core.Fungible),
+				ESDTTokenNonce: 0,
+			},
+		}, nil
+	}
+
+	return input.ESDTTransfers, nil
 }
 
 // ManagedGetBackTransfers VMHooks implementation.
