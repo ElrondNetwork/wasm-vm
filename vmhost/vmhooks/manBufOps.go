@@ -631,6 +631,7 @@ func (context *VMHooksImpl) MBufferFromSmallIntSigned(mBufferHandle int32, value
 // @autogenerate(VMHooks)
 func (context *VMHooksImpl) MBufferToBigFloat(mBufferHandle, bigFloatHandle int32) int32 {
 	managedType := context.GetManagedTypesContext()
+	enableEpochsHandler := context.host.EnableEpochsHandler()
 	metering := context.GetMeteringContext()
 	metering.StartGasTracing(mBufferToBigFloatName)
 
@@ -667,6 +668,11 @@ func (context *VMHooksImpl) MBufferToBigFloat(mBufferHandle, bigFloatHandle int3
 	bigFloat := new(big.Float)
 	err = bigFloat.GobDecode(managedBuffer)
 	if err != nil {
+		if enableEpochsHandler.IsFlagEnabled(vmhost.MaskInternalDependenciesErrorsFlag) {
+			context.FailExecution(vmhost.ErrBigFloatDecode)
+			return 1
+		}
+
 		context.FailExecution(err)
 		return 1
 	}
@@ -683,6 +689,7 @@ func (context *VMHooksImpl) MBufferToBigFloat(mBufferHandle, bigFloatHandle int3
 // @autogenerate(VMHooks)
 func (context *VMHooksImpl) MBufferFromBigFloat(mBufferHandle, bigFloatHandle int32) int32 {
 	managedType := context.GetManagedTypesContext()
+	enableEpochsHandler := context.host.EnableEpochsHandler()
 	metering := context.GetMeteringContext()
 	metering.StartGasTracing(mBufferFromBigFloatName)
 
@@ -701,6 +708,9 @@ func (context *VMHooksImpl) MBufferFromBigFloat(mBufferHandle, bigFloatHandle in
 
 	encodedFloat, err := value.GobEncode()
 	if err != nil {
+		if enableEpochsHandler.IsFlagEnabled(vmhost.MaskInternalDependenciesErrorsFlag) {
+			context.FailExecution(vmhost.ErrBigFloatEncode)
+		}
 		context.FailExecution(err)
 		return 1
 	}

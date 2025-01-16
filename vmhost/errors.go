@@ -251,6 +251,30 @@ var ErrInfinityFloatOperation = errors.New("infinity operations are not allowed"
 // ErrBigFloatWrongPrecision signals that the precision has a wrong value
 var ErrBigFloatWrongPrecision = errors.New("precision of the big float must be 53")
 
+// ErrBigFloatDecode signals that big float parse error
+var ErrBigFloatDecode = errors.New("big float decode error")
+
+// ErrBigFloatEncode signals that big float parse error
+var ErrBigFloatEncode = errors.New("big float encode error")
+
+// ErrSha256Hash signals a sha256 hash error
+var ErrSha256Hash = errors.New("sha256 hash error")
+
+// ErrKeccak256Hash signals a keccak256 hash error
+var ErrKeccak256Hash = errors.New("keccak256 hash error")
+
+// ErrRipemd160Hash signals a ripemd160 hash error
+var ErrRipemd160Hash = errors.New("ripemd160 hash error")
+
+// ErrBlsVerify signals a bls verify error
+var ErrBlsVerify = errors.New("bls verify error")
+
+// ErrEd25519Verify signals a ed25519 verify error
+var ErrEd25519Verify = errors.New("ed25519 verify error")
+
+// ErrSecp256k1Verify signals a secp256k1 verify error
+var ErrSecp256k1Verify = errors.New("secp256k1 verify error")
+
 // ErrAllOperandsAreEqualToZero signals that all operands are equal to 0
 var ErrAllOperandsAreEqualToZero = errors.New("all operands are equal to 0")
 

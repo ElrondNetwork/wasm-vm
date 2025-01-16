@@ -11,4 +11,7 @@ const (
 
 	// UseGasBoundedShouldFailExecutionFlag defines the flag that activates failing of execution if gas bounded check fails
 	UseGasBoundedShouldFailExecutionFlag core.EnableEpochFlag = "UseGasBoundedShouldFailExecutionFlag"
+
+	// MaskInternalDependenciesErrorsFlag defines the flag that activates masking of internal dependencies errors
+	MaskInternalDependenciesErrorsFlag core.EnableEpochFlag = "MaskInternalDependenciesErrorsFlag"
 )
